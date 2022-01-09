@@ -19,7 +19,7 @@ services:
       - ZOOKEEPER_INIT_LIMIT=5
       - ZOOKEEPER_SYNC_LIMIT=2
       - ZOOKEEPER_SERVERS=zk-1:2888:3888;zk-2:2888:3888;zk-3:2888:3888
-  
+
   zk-2:
     image: confluentinc/cp-zookeeper:6.0.0-1-ubi8
     restart: always
@@ -39,7 +39,7 @@ services:
       - ZOOKEEPER_INIT_LIMIT=5
       - ZOOKEEPER_SYNC_LIMIT=2
       - ZOOKEEPER_SERVERS=zk-1:2888:3888;zk-2:2888:3888;zk-3:2888:3888
-  
+
   zk-3:
     image: confluentinc/cp-zookeeper:6.0.0-1-ubi8
     restart: always
@@ -139,6 +139,8 @@ services:
     container_name: schema-registry
     ports:
       - "8081:8081"
+    volumes:
+      - ./schema:/opt/app/schema/
     networks:
       - confluent
     environment:
@@ -233,6 +235,25 @@ services:
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONTROL_CENTER_UI_AUTOUPDATE_ENABLE: "false"
 
+  rest-proxy:
+    image: confluentinc/cp-kafka-rest:6.0.0-10-ubi8
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - schema-registry
+    networks:
+      - confluent
+    ports:
+      - 8082:8082
+    hostname: rest-proxy
+    container_name: rest-proxy
+    environment:
+      KAFKA_REST_HOST_NAME: rest-proxy
+      KAFKA_REST_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_REST_LISTENERS: "http://rest-proxy:8082"
+      KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+
   tools:
     image: cnfltraining/training-tools:6.0
     restart: always
@@ -261,4 +282,3 @@ volumes:
 
 networks:
   confluent:
-  
